@@ -1,1 +1,101 @@
 
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+
+public class AttributeExtractor {
+
+    // Class to hold the attribute mapping details
+    static class AttributeMapping {
+        String attributeName;
+        int start;
+        int end;
+        int length;
+
+        public AttributeMapping(String attributeName, int start, int end, int length) {
+            this.attributeName = attributeName;
+            this.start = start;
+            this.end = end;
+            this.length = length;
+        }
+    }
+
+    // Function to read the mapping CSV and create a list of AttributeMappings
+    public static List<AttributeMapping> readMappingCsv(String mappingFilePath) throws IOException {
+        List<AttributeMapping> mappings = new ArrayList<>();
+
+        try (BufferedReader br = Files.newBufferedReader(Paths.get(mappingFilePath))) {
+            String line;
+            // Skipping header
+            br.readLine(); 
+            
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(",");
+                String attributeName = values[0].trim();
+                int start = Integer.parseInt(values[1].trim()) - 1; // Adjusting to 0-indexed
+                int end = Integer.parseInt(values[2].trim());
+                int length = Integer.parseInt(values[3].trim());
+
+                mappings.add(new AttributeMapping(attributeName, start, end, length));
+            }
+        }
+        return mappings;
+    }
+
+    // Function to process the input file line by line using the attribute mappings
+    public static void processInputFile(String inputFilePath, String outputFilePath, List<AttributeMapping> mappings) throws IOException {
+        try (BufferedReader br = Files.newBufferedReader(Paths.get(inputFilePath));
+             BufferedWriter bw = Files.newBufferedWriter(Paths.get(outputFilePath))) {
+
+            // Write header (attribute names) in the CSV output file
+            for (int i = 0; i < mappings.size(); i++) {
+                bw.write(mappings.get(i).attributeName);
+                if (i < mappings.size() - 1) {
+                    bw.write(",");
+                }
+            }
+            bw.write("\n");
+
+            // Read each line from the input file and extract attribute values
+            String line;
+            while ((line = br.readLine()) != null) {
+                for (int i = 0; i < mappings.size(); i++) {
+                    AttributeMapping mapping = mappings.get(i);
+                    // Safeguard to avoid out of bounds if the line is shorter than expected
+                    String extractedValue = line.length() >= mapping.end ? 
+                                            line.substring(mapping.start, mapping.end) : 
+                                            "";
+
+                    bw.write(extractedValue.trim()); // Trim to remove any unwanted whitespace
+                    if (i < mappings.size() - 1) {
+                        bw.write(",");
+                    }
+                }
+                bw.write("\n");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        if (args.length != 3) {
+            System.out.println("Usage: java AttributeExtractor <mappingFilePath> <inputFilePath> <outputFilePath>");
+            return;
+        }
+
+        String mappingFilePath = args[0];
+        String inputFilePath = args[1];
+        String outputFilePath = args[2];
+
+        try {
+            // Read the mapping CSV file
+            List<AttributeMapping> mappings = readMappingCsv(mappingFilePath);
+
+            // Process the input file and write to the output CSV
+            processInputFile(inputFilePath, outputFilePath, mappings);
+
+            System.out.println("Processing complete. Output written to " + outputFilePath);
+        } catch (IOException e) {
+            System.err.println("Error processing files: " + e.getMessage());
+        }
+    }
+}
