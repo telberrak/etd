@@ -168,4 +168,94 @@ Identify Time Frames: Trend patterns on higher time frames (e.g., daily, weekly)
 
 
 These trend patterns can be very effective when combined with technical analysis and trading indicators to confirm breakouts, continuations, or reversals.
+Here's a Pine Script to identify some of the common trend patterns like ascending and descending triangles, flags, double tops and bottoms, and head and shoulders. This script will use simple trendline logic to try to capture these patterns. Note that Pine Script is limited in its ability to identify complex patterns, so it may not always be perfect.
+
+//@version=5
+indicator("Trend Pattern Detection", overlay=true)
+
+// Helper functions to detect trends
+isUpTrend(src, len) => ta.lowest(src, len) < ta.lowest(src, len * 2) and ta.highest(src, len) > ta.highest(src, len * 2)
+isDownTrend(src, len) => ta.highest(src, len) < ta.highest(src, len * 2) and ta.lowest(src, len) > ta.lowest(src, len * 2)
+
+// Inputs for pattern length and sensitivity
+len = input.int(20, title="Pattern Length", minval=5)
+sensitivity = input.float(1.0, title="Sensitivity", minval=0.5, maxval=3.0)
+
+// Detecting Ascending and Descending Triangles
+isAscendingTriangle = isUpTrend(low, len) and ta.highest(close, len) < ta.highest(close, len * 2)
+isDescendingTriangle = isDownTrend(high, len) and ta.lowest(close, len) > ta.lowest(close, len * 2)
+
+// Detecting Flags
+isFlagUp = isUpTrend(close, len) and close[len] < close[len * 2]
+isFlagDown = isDownTrend(close, len) and close[len] > close[len * 2]
+
+// Detecting Double Top and Double Bottom
+doubleTop = ta.highest(close, len) == ta.highest(close, len * 2)
+doubleBottom = ta.lowest(close, len) == ta.lowest(close, len * 2)
+
+// Detecting Head and Shoulders (approximation)
+leftShoulder = high[len * 3] < high[len * 2] and high[len * 3] < high[len]
+head = high[len * 2] > high[len] and high[len * 2] > high[len * 3]
+rightShoulder = high[len] < high[len * 2] and high[len] < high[len * 3]
+isHeadAndShoulders = leftShoulder and head and rightShoulder
+
+// Plot signals for each pattern
+plotshape(isAscendingTriangle, title="Ascending Triangle", location=location.belowbar, color=color.green, style=shape.labelup, text="Asc Triangle")
+plotshape(isDescendingTriangle, title="Descending Triangle", location=location.abovebar, color=color.red, style=shape.labeldown, text="Desc Triangle")
+plotshape(isFlagUp, title="Bullish Flag", location=location.belowbar, color=color.blue, style=shape.labelup, text="Bull Flag")
+plotshape(isFlagDown, title="Bearish Flag", location=location.abovebar, color=color.purple, style=shape.labeldown, text="Bear Flag")
+plotshape(doubleTop, title="Double Top", location=location.abovebar, color=color.red, style=shape.labeldown, text="Double Top")
+plotshape(doubleBottom, title="Double Bottom", location=location.belowbar, color=color.green, style=shape.labelup, text="Double Bottom")
+plotshape(isHeadAndShoulders, title="Head & Shoulders", location=location.abovebar, color=color.orange, style=shape.labeldown, text="H&S")
+
+Explanation of the Script:
+
+1. Ascending and Descending Triangles: Checks for an upward or downward trend within the defined pattern length. Ascending triangles are typically bullish, while descending triangles are bearish.
+
+
+2. Flags: Detects continuation patterns by identifying a pullback (flag) after a strong trend (pole). If the trend is upward, it marks it as a bullish flag; if downward, a bearish flag.
+
+
+3. Double Tops and Double Bottoms: Looks for two consecutive peaks or troughs at approximately the same level. Double tops indicate a potential reversal from an uptrend, while double bottoms suggest a reversal from a downtrend.
+
+
+4. Head and Shoulders: Uses an approximation of a head and shoulders pattern by checking if there is a "left shoulder," "head," and "right shoulder" structure in the trend. This pattern is a bearish reversal sign, with the inverse being bullish.
+
+
+
+Notes:
+
+Sensitivity: You can adjust the sensitivity input to control how strictly the patterns are detected.
+
+Limitations: This is an approximation. Pine Script has limitations in complex pattern detection, so this script is best used as an initial filter rather than as a definitive tool.
+
+
+You can further refine this script by adjusting parameters, adding volume conditions, or incorporating additional trend confirmation indicators.
+
+Here's a Pine Script that identifies multiple strong support and resistance levels based on recent price action over a specified number of days. This script calculates the support and resistance levels by identifying swing highs and swing lows over the defined period and then plots these levels on the chart.
+
+//@version=5
+indicator("Multi-Level Support and Resistance", overlay=true)
+
+// User input for number of days to look back
+lookbackDays = input.int(30, title="Lookback Days", minval=1)
+sensitivity = input.int(2, title="Sensitivity", minval=1, tooltip="Higher values for sensitivity reduce noise by requiring larger price differences")
+
+// Convert days to bar length (assuming daily timeframe)
+lookbackBars = lookbackDays * 24 * 60 // 1 day = 1440 minutes
+
+// Calculate Highest and Lowest values within the lookback period
+highLevel = ta.highest(high, lookbackBars)
+lowLevel = ta.lowest(low, lookbackBars)
+
+// Detect swing highs (potential resistance) and swing lows (potential support)
+isSwingHigh = high == ta.highest(high, sensitivity * 2 + 1)
+isSwingLow = low == ta.lowest(low, sensitivity * 2 + 1)
+
+// Array to store support and resistance levels
+var float[] supportLevels = array.new_float(0)
+var float[] resistanceLevels = array.new_float(0)
+
+// Function to
+
 
